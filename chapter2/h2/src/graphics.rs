@@ -69,6 +69,27 @@ pub fn render(
             Some(count) => 255 - count as u8,
         };
     }
+
+    /* Alternative loop implementation
+    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    let mut pixel_coord = Pixel { x: 0, y: 0 };
+    let mut pindex = 0;
+    let point;
+    while pindex < pixels_count {
+        pixel.x = pindex / bounds.width;
+        pixel.y = pindex - (pixel.x * bounds.width);
+        // calculation is supposed to be faster than `if` jumpings
+        // resets `y` (starts from 0) when `x` ticks
+        // x: 0, y: 0..max; x:1, y: 0..max; x: 2, y: 0..max 
+
+        point = pixel_to_point(bounds, pixel_coord, upper_left, lower_right);
+        pixels[pindex] = match mandelbrot::escape_time(point, 255) {
+            None => 0,
+            Some(count) => 255 - count as u8,
+        };
+        pindex += 1;
+    }
+    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 }
 
 /// Writes pixels from set ina a Grayscale(8) image within given size bounds
