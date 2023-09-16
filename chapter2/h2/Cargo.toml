@@ -1,0 +1,14 @@
+[package]
+name = "h2"
+description = "Concurrency"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num = "0.4.0"
+image = "0.24.7"
+
+[cargo-check]
+test=true
