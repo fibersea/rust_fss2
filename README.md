@@ -22,4 +22,4 @@ The code though is a bit refactored/improved (possibly messed up) by me accordin
         ##### 2.6. A Concurrent Mandelbrot Program
         ##### 2.7. Running the Mandelbrot Plotter
         ##### 2.8. Safety Is Invisible
-### 3. 
+### 3. Fundamental Types
