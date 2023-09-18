@@ -37,6 +37,7 @@ pub fn pixel_to_point(
     }
 }
 
+
 /// Render a pixel point in an image pixel set
 /// 
 /// For each pixel offset (basically each new separate pixel)
@@ -52,32 +53,52 @@ pub fn render(
     assert!(pixels.len() == bounds.width * bounds.height,
         "Calculated bounds doesn't match the size of a pixels set");
     
+    // /* Native Book implementation
+    //  * ------------------------------------------------------------------------
+    for row in 0..bounds.height {
+        for column in 0..bounds.width {
+            let point = pixel_to_point(bounds, Pixel::new(column, row),
+                                       upper_left, lower_right);
+
+            pixels[row * bounds.width + column] =
+                match mandelbrot::escape_time(point, 255) {
+                    None => 0,
+                    Some(count) => 255 - count as u8
+                };
+        }
+    }
+    //  * ------------------------------------------------------------------------
+    //  */
+     
     // Pixel counter to plot and image row by row
-    let mut pixel_coord = Pixel { x: 0, y: 0 };
-    let mut point;
-    
+    // let mut pixel_coord = Pixel { x: 0, y: 0 };
+    // let mut pindex = 0;
+    // let mut point;
+    /* Iterator implementation
+     * ------------------------------------------------------------------------
     for (pindex, pixel) in pixels.iter_mut().enumerate() {
-        pixel_coord.x = pindex / bounds.width;
-        pixel_coord.y = pindex - (pixel_coord.x * bounds.width);
+        pixel_coord.y = pindex / bounds.width;
+        pixel_coord.x = pindex - (pixel_coord.y * bounds.width);
         // calculation is supposed to be faster than `if` jumpings
         // resets `y` (starts from 0) when `x` ticks
         // x: 0, y: 0..max; x:1, y: 0..max; x: 2, y: 0..max , and so on
 
+        // println!("{:?}", pixel_coord);
         point = pixel_to_point(bounds, pixel_coord, upper_left, lower_right);
         *pixel = match mandelbrot::escape_time(point, 255) {
             None => 0,
             Some(count) => 255 - count as u8,
         };
     }
+     * ------------------------------------------------------------------------
+     */
+
 
     /* Alternative loop implementation
-    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    let mut pixel_coord = Pixel { x: 0, y: 0 };
-    let mut pindex = 0;
-    let point;
-    while pindex < pixels_count {
-        pixel.x = pindex / bounds.width;
-        pixel.y = pindex - (pixel.x * bounds.width);
+     * ------------------------------------------------------------------------
+    while pindex < pixels.len() {
+        pixel_coord.y = pindex / bounds.width;
+        pixel_coord.x = pindex - (pixel_coord.y * bounds.width);
         // calculation is supposed to be faster than `if` jumpings
         // resets `y` (starts from 0) when `x` ticks
         // x: 0, y: 0..max; x:1, y: 0..max; x: 2, y: 0..max 
@@ -89,8 +110,46 @@ pub fn render(
         };
         pindex += 1;
     }
-    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+     * ------------------------------------------------------------------------
+     */
 }
+
+
+pub fn thread_render(
+    pixels: &mut [u8],
+    bounds: SquareBoundsPx,
+    upper_left: Complex<f64>,
+    lower_right: Complex<f64>,
+) {
+    assert!(pixels.len() == bounds.width * bounds.height,
+        "Calculated bounds doesn't match the size of a pixels set");
+    
+    // Calculate amount of threads needed to handle each pixels-band
+    // + 1 counts for case where not all rows fit into integer number of rows
+    let threads = 8;
+    let rows_per_band = bounds.height / threads + 1;
+    let bands: Vec<&mut [u8]> =
+        pixels.chunks_mut(rows_per_band * bounds.width).collect();
+            
+    crossbeam::scope(|spawner| {
+        for (i, band) in bands.into_iter().enumerate() {
+            let bottom = rows_per_band * i;
+            let height = band.len() / bounds.width;
+            let band_bounds = SquareBoundsPx::new(bounds.width, height);
+            let band_upper_left = pixel_to_point(
+                bounds, Pixel::new(0, bottom), upper_left, lower_right);
+            let band_lower_right = pixel_to_point(bounds,
+                Pixel::new(bounds.width, bottom + height),
+                upper_left, lower_right);
+
+            spawner.spawn(move |_| {
+                render(band, band_bounds, band_upper_left, band_lower_right);
+            });
+        }
+    }).unwrap();
+}
+
+
 
 /// Writes pixels from set ina a Grayscale(8) image within given size bounds
 pub fn write_image(
@@ -125,6 +184,5 @@ mod test_gui {
                 im: -0.75,
             }
         );
-
     }
 }

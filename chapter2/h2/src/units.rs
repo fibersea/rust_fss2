@@ -14,12 +14,19 @@ impl Pixel {
     }
 }
 
+
 /// Represents size bounds for a visual square (i.e. for image size)
 /// 
 #[derive(Copy, Clone, Debug)]
 pub struct SquareBoundsPx {
     pub width: usize,
     pub height: usize,
+}
+
+impl SquareBoundsPx {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self { width, height }
+    }
 }
 
 impl From<(usize, usize)> for SquareBoundsPx {

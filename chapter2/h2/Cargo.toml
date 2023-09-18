@@ -9,6 +9,7 @@ edition = "2021"
 [dependencies]
 num = "0.4.0"
 image = "0.24.7"
+crossbeam = "0.8.2"
 
 [cargo-check]
 test=true
